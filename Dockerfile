@@ -23,34 +23,27 @@
 #       --websocket-url ws://localhost:4002/ \
 #       --usage-db /data/relay-usage.sqlite
 
-# Cross-compiling on the native build platform means the arm64 image needs
-# no QEMU emulation, so builds behave the same on CI and local machines.
-FROM --platform=$BUILDPLATFORM docker.io/library/rust:1-alpine AS build
+# Build natively for the target platform. Cross-compiling would need an
+# aarch64 musl libc cross-toolchain (e.g. for rusqlite's bundled SQLite,
+# built via cc); Alpine doesn't ship one. QEMU is registered ahead of time
+# in CI, and locally `podman build --platform` works the same way.
+FROM docker.io/library/rust:1-alpine AS build
 RUN apk add --no-cache musl-dev gcc
 WORKDIR /src
-# TARGETOS/TARGETARCH are provided automatically by buildx (and by podman
-# build --platform); default to linux/amd64 when building without them
-ARG TARGETOS TARGETARCH
-# map buildx arch names to Rust musl target triples
-RUN case "${TARGETARCH:-amd64}" in \
-      amd64) echo x86_64-unknown-linux-musl > /rust-target ;; \
-      arm64) echo aarch64-unknown-linux-musl > /rust-target ;; \
-      *) echo "unsupported TARGETARCH ${TARGETARCH}" >&2; exit 1 ;; \
-    esac && rustup target add "$(cat /rust-target)"
 # dependency layer: build with a dummy main first to cache the dep build
 COPY Cargo.toml Cargo.lock ./
 RUN mkdir -p src/bin && \
     echo 'fn main() {}' > src/bin/relay-server.rs && \
     echo 'fn main() {}' > src/bin/relay-stress.rs && \
     echo 'pub fn placeholder() {}' > src/lib.rs && \
-    cargo build --release --target "$(cat /rust-target)" && \
+    cargo build --release && \
     rm -rf src
 COPY . .
 # cargo's fingerprint uses mtimes; the dummy sources may appear newer than the
 # real ones, so force a rebuild of our crate
 RUN find src -exec touch {} + && \
-    cargo build --release --target "$(cat /rust-target)" && \
-    cp "target/$(cat /rust-target)/release/relay-server" /out-relay-server && \
+    cargo build --release && \
+    cp target/release/relay-server /out-relay-server && \
     adduser -D -u 10001 wormhole && \
     mkdir -p /data && \
     chown 10001:10001 /data
