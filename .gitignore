@@ -1,0 +1,25 @@
+# Build artifacts
+/target
+/relay-server
+/relay-stress
+*.exe
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+
+# Binaries and local test artifacts
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-backup-v*
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+e2e/.mailbox-server

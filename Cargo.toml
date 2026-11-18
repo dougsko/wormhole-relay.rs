@@ -1,0 +1,43 @@
+[package]
+name = "wormhole-relay"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+description = "Transit Relay server for Magic Wormhole written in Rust"
+repository = "https://github.com/dougsko/wormhole-relay.rs"
+homepage = "https://github.com/dougsko/wormhole-relay.rs"
+readme = "README.md"
+keywords = ["magic-wormhole", "transit", "relay", "rendezvous"]
+categories = ["network-programming"]
+
+[lib]
+name = "wormhole_relay"
+path = "src/lib.rs"
+
+[[bin]]
+name = "relay-server"
+path = "src/bin/relay-server.rs"
+
+[[bin]]
+name = "relay-stress"
+path = "src/bin/relay-stress.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = "0.30"
+futures-util = "0.3"
+rusqlite = { version = "0.32", features = ["bundled"] }
+tempfile = "3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+regex = "1"
+rand = "0.8"
+libc = "0.2"
+clap = { version = "4", features = ["derive"] }
+
+
+[profile.release]
+strip = "symbols"
+lto = true
+codegen-units = 1
